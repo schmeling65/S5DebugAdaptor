@@ -200,5 +200,6 @@ namespace debug_lua {
 		int GetUpvalue(lua::State L);
 		int SetUpvalue(lua::State L);
 		int IsDebuggerAttached(lua::State L);
+		int WriteTableToFile(lua::State L);
 	};
 }

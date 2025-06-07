@@ -3,6 +3,8 @@
 #include <regex>
 #include <thread>
 #include <filesystem>
+#include <iostream>
+#include <fstream>
 #include <uni_algo/case.h>
 #include "Hooks.h"
 #include "shok.h"
@@ -431,6 +433,7 @@ void debug_lua::Debugger::InitializeLua(lua::State L, bool mainmenu, lua::CFunct
         lua::FuncReference::GetRef<Debugger, &Debugger::GetLocal>(*this, "GetLocal"),
         lua::FuncReference::GetRef<Debugger, &Debugger::SetUpvalue>(*this, "SetUpvalue"),
         lua::FuncReference::GetRef<Debugger, &Debugger::GetUpvalue>(*this, "GetUpvalue"),
+        lua::FuncReference::GetRef<Debugger, &Debugger::WriteTableToFile>(*this, "WriteTableToFile"),
         lua::FuncReference{"ShutdownDebugger", shutdown},
         };
     L.RegisterGlobalLib(lib, "LuaDebugger");
@@ -690,4 +693,18 @@ int debug_lua::Debugger::IsDebuggerAttached(lua::State L)
 {
     L.Push(Handler != nullptr);
     return 1;
+}
+int debug_lua::Debugger::WriteTableToFile(lua::State L)
+{
+    auto file = L.CheckStringView(1);
+    auto name = L.CheckStringView(2);
+    auto data = L.ToDebugString<ToDebugString_Format>(3, std::numeric_limits<int>::max());
+    FileDialog d{};
+    d.SelectedPath = file;
+    d.Title = "Debugger export file to:";
+    if (d.Show()) {
+        std::fstream sd{ d.SelectedPath.c_str(), std::ios_base::out | std::ios_base::trunc };
+        sd << name << " = " << data;
+    }
+    return 0;
 }
