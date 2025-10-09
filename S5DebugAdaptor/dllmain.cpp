@@ -125,6 +125,10 @@ bool __declspec(dllexport) __stdcall DebuggerSupportsSourceArchive() {
 	return true;
 }
 
+void __declspec(dllexport) __stdcall SetDisableExecuteLua(bool disable) {
+	debugger.DisableExecuteLua = disable;
+}
+
 int ShutdownDebuggerLua(lua::State L) {
 	ShutdownDebugger();
 	return 0;

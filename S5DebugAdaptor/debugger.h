@@ -126,6 +126,7 @@ namespace debug_lua {
 		bool HadForeground = false;
 
 	public:
+		bool DisableExecuteLua = false;
 		IDebugEventHandler* Handler = nullptr;
 		Status St = Status::Running;
 		Request Re = Request::Resume;

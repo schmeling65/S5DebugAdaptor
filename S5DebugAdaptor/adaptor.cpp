@@ -293,6 +293,9 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 	Session->registerHandler([&](const dap::SetVariableRequest& request)
 		-> dap::ResponseOrError<dap::SetVariableResponse> {
 			auto c = LuaExecutionPackagedTask<dap::SetVariableResponse>{ [this, request]() {
+				if (Dbg.DisableExecuteLua)
+					throw std::invalid_argument{ "readonly" };
+
 				auto [s, lvl, sc, var] = DecodeStackFrame(static_cast<int>(request.variablesReference));
 				lua::State L{ s.L };
 				lua::DebugInfo i{};
@@ -360,6 +363,9 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 	Session->registerHandler([&](const dap::EvaluateRequest& request)
 		-> dap::ResponseOrError<dap::EvaluateResponse> {
 			auto c = LuaExecutionPackagedTask<dap::EvaluateResponse>{ [this, request]() {
+				if (Dbg.DisableExecuteLua)
+					throw lua::LuaException{ "readonly" };
+
 				lua::State L;
 				int lvl;
 				if (request.frameId.has_value()) {
