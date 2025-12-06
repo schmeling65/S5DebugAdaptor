@@ -36,9 +36,12 @@ namespace debug_lua {
 		Syntax = 1 << 2,
 		Break = 1 << 3,
 	};
-	template<>
-	class ::enum_is_flags<BreakSettings> : public std::true_type {};
+}
 
+template<>
+class enum_is_flags<debug_lua::BreakSettings> : public std::true_type {};
+
+namespace debug_lua {
 	struct IDebugEventHandler {
 		virtual void OnStateOpened(DebugState& s) = 0;
 		virtual void OnStateClosing(DebugState& s, bool lastState) = 0;

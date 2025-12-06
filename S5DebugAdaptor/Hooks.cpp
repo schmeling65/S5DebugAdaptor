@@ -21,7 +21,7 @@ LRESULT __stdcall debug_lua::Hooks::WinProcHook(HWND wnd, UINT msg, WPARAM w, LP
 		RunCallback();
 	return 0;
 }
-void __declspec(naked) winprocasm() {
+void __attribute((naked)) debug_lua::Hooks::WinProcASM() {
 	__asm {
 		push[ebp + 0x14];
 		push[ebp + 0x10];
@@ -35,7 +35,7 @@ void __declspec(naked) winprocasm() {
 
 		push 0xFFFFFFEB;
 		push[ebp + 8];
-		mov eax, [0x761370];
+		mov eax, 0x761370;
 		mov eax, [eax];
 		call eax;
 
@@ -176,7 +176,7 @@ void debug_lua::Hooks::InstallHook()
 		return;
 	Hooked = true;
 	SaveVirtualProtect vp{ reinterpret_cast<void*>(0x407451), 0x40745C - 0x407451 };
-	WriteJump(reinterpret_cast<void*>(0x407451), &winprocasm, reinterpret_cast<void*>(0x40745C));
+	WriteJump(reinterpret_cast<void*>(0x407451), &WinProcASM, reinterpret_cast<void*>(0x40745C));
 	
 	auto handle = GetModuleHandle("S5Lua5");
 	if (!handle)

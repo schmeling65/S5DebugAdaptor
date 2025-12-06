@@ -1,0 +1,7 @@
+[requires]
+uni-algo/1.2.0
+cppdap/cci.20230526
+
+[generators]
+CMakeDeps
+CMakeToolchain

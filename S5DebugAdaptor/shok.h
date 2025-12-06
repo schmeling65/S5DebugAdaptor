@@ -230,9 +230,12 @@ namespace BB {
 		virtual void __stdcall Seek(long seek, SeekMode mode);
 		virtual void __stdcall Write(const void* buff, long numBytesToWrite);
 	};
-	template<>
-	class ::enum_is_flags<IStream::Flags> : public std::true_type {};
+}
 
+template<>
+class enum_is_flags<BB::IStream::Flags> : public std::true_type {};
+
+namespace BB {
 	class CFileStream : public IStream { // used to read files directly
 		HANDLE Handle = 0;
 	public:
@@ -290,9 +293,12 @@ namespace BB {
 
 		static inline constexpr int vtp = 0x77F778;
 	};
-	template<>
-	class ::enum_is_flags<IFileSystem::SearchOptions> : public std::true_type {};
+}
 
+template<>
+class enum_is_flags<BB::IFileSystem::SearchOptions> : public std::true_type {};
+
+namespace BB {
 	class CDirectoryFileSystemSpecialOpenFileOnly : public IFileSystem {
 	public:
 		static inline constexpr int vtp = 0x780398;
