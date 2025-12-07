@@ -10,7 +10,7 @@ find_package(cppdap REQUIRED)
 
 add_compile_options(-Wno-invalid-offsetof -Wno-microsoft-cast)
 
-add_library(S5DebugAdaptor SHARED
+add_library(LuaDebugger SHARED
         S5DebugAdaptor/adaptor.cpp
         S5DebugAdaptor/debugger.cpp
         S5DebugAdaptor/dllmain.cpp
@@ -20,5 +20,6 @@ add_library(S5DebugAdaptor SHARED
         S5DebugAdaptor/utility.cpp
         S5DebugAdaptor/winhelpers.cpp
         S5DebugAdaptor/luapp/luapp50.cpp
+        S5DebugAdaptor/Resource.rc
 )
-target_link_libraries(S5DebugAdaptor PRIVATE uni-algo::uni-algo cppdap::cppdap "${CMAKE_CURRENT_SOURCE_DIR}/S5DebugAdaptor/lua50/S5Lua5.lib")
+target_link_libraries(LuaDebugger PRIVATE uni-algo::uni-algo cppdap::cppdap "${CMAKE_CURRENT_SOURCE_DIR}/S5DebugAdaptor/lua50/S5Lua5.lib")

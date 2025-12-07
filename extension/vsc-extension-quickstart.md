@@ -48,5 +48,10 @@
 
 
 notes:
-update dependencies: npm update, vcpkg x-update-baseline
+extension dev:
+- apt install nodejs npm
+- npm install
+- npm outdated
+- edir package.json
+- npm update
 package: vsce package
