@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "shok.h"
 
 static inline bool(__thiscall* const dirfilesys_filter_allowedI)(BB::CDirectoryFileSystem::FilterData* th, const char* f) = reinterpret_cast<bool(__thiscall*)(BB::CDirectoryFileSystem::FilterData*, const char*)>(0x5532C4);
@@ -17,10 +16,14 @@ BB::CBBArchiveFile::DirectoryEntry* BB::CBBArchiveFile::SearchByHash(const char*
 {
 	return archivefile_searchbyhash(this, filename);
 }
-BB::CBBArchiveFile::DirectoryEntry* BB::CBBArchiveFile::GetByOffset(size_t offset)
-{
+// ReSharper disable once CppDFAConstantFunctionResult
+BB::CBBArchiveFile::DirectoryEntry* BB::CBBArchiveFile::GetByOffset(size_t offset) const {
 	DirectoryEntry* r = nullptr;
+	// ReSharper disable once CppDFAUnusedValue
+	// ReSharper disable once CppDFAUnreadVariable
 	void* d = DirectoryData;
+	// ReSharper disable once CppDFAUnusedValue
+	// ReSharper disable once CppDFAUnreadVariable
 	size_t o = offset;
 	__asm {
 		mov eax, d;
@@ -38,7 +41,7 @@ void BB::CFileSystemMgr::AddFolder(const char* path)
 	auto v = LoadOrder.SaveVector();
 	size_t l = v.Vector.size();
 	BB::IFileSystem* last = v.Vector[l - 1];
-	for (int i = l - 1; i > 0; i--) {
+	for (size_t i = l - 1; i > 0; i--) {
 		v.Vector[i] = v.Vector[i - 1];
 	}
 	v.Vector[0] = last;
@@ -174,33 +177,6 @@ void BB::CFileStreamEx::Close()
 	shok_BB_CFileStreamEx_Close(this);
 }
 
-const char* BB::CFileSystemMgr::ReadFileToString(const char* name, size_t* size)
-{
-	char* buff = nullptr;
-	try
-	{
-		BB::CFileStreamEx filestr{};
-		if (filestr.OpenFile(name, BB::CFileStreamEx::Flags::DefaultRead)) {
-			size_t s = filestr.GetSize();
-			if (size)
-				*size = s;
-			if (s > 0) {
-				buff = new char[s + 1];
-				memset(buff, 0, s + 1);
-				filestr.Read(buff, s);
-			}
-			filestr.Close();
-		}
-	}
-	catch (...)
-	{
-		if (buff)
-			delete[] buff;
-		return nullptr;
-	}
-	return buff;
-}
-
 bool BB::CFileSystemMgr::DoesFileExist(const char* name)
 {
 	FileInfo i{};
@@ -232,13 +208,16 @@ const char* shok::String::c_str() const
 	else
 		return data.alloc;
 }
+// ReSharper disable once CppDFAConstantFunctionResult
 size_t shok::String::size() const
 {
 	return size_v;
 }
 shok::String::~String()
 {
+	// ReSharper disable once CppDFAConstantConditions
 	if (allocated >= 16)
+		// ReSharper disable once CppDFAUnreachableCode
 		shok::Free(data.alloc);
 }
 static inline void(__thiscall* const str_assign)(shok::String* th, const char* c) = reinterpret_cast<void(__thiscall*)(shok::String*, const char*)>(0x40182E);
@@ -263,21 +242,25 @@ bool shok::String::operator==(const String& r) const
 {
 	return (*this <=> r) == std::strong_ordering::equal;
 }
-void shok::String::operator=(const String& s)
+shok::String& shok::String::operator=(const String& s)
 {
 	assign(s.c_str(), s.size());
+	return *this;
 }
-void shok::String::operator=(const std::string& s)
+shok::String& shok::String::operator=(const std::string& s)
 {
 	assign(s.c_str(), s.size());
+	return *this;
 }
-void shok::String::operator=(const std::string_view& s)
+shok::String& shok::String::operator=(const std::string_view& s)
 {
 	assign(s.data(), s.size());
+	return *this;
 }
-void shok::String::operator=(const char* s)
+shok::String& shok::String::operator=(const char* s)
 {
 	assign(s);
+	return *this;
 }
 shok::String::operator std::string_view() const
 {
@@ -321,7 +304,7 @@ GS3DTools::CMapData& GS3DTools::CMapData::operator=(const GS3DTools::CMapData& o
 {
     if (this == &o)
         return *this;
-    return *mapdata_assign(this, &o);
+    return *mapdata_assign(this, &o); // NOLINT(*-unconventional-assign-operator)
 }
 
 int(__thiscall* const cinfo_getindex)(Framework::CampagnInfo* th, const char* s) = reinterpret_cast<int(__thiscall* const)(Framework::CampagnInfo*, const char*)>(0x51A23B);
@@ -350,12 +333,15 @@ void Framework::SavegameSystem::SaveGame(const char* slot, GS3DTools::CMapData* 
     savesys_save(this, slot, mapdata, name, debugSave);
 }
 
+// ReSharper disable once CppDFAConstantFunctionResult
 Framework::CampagnInfo* Framework::CMain::CIH::GetCampagnInfo(shok::MapType i, const char* n)
 {
     int i2 = static_cast<int>(i);
     if (i2 < -1 || i2 >= 4)
         return nullptr;
     Framework::CampagnInfo* r = nullptr;
+    // ReSharper disable once CppDFAUnusedValue
+    // ReSharper disable once CppDFAUnreadVariable
     auto* th = this;
     __asm {
         push n;

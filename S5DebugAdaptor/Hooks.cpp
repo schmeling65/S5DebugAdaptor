@@ -1,8 +1,6 @@
-#include "pch.h"
 #include "Hooks.h"
 #include <stdexcept>
 #include "luapp/luapp50.h"
-#include "shok.h"
 
 namespace lua_debughook {
 	struct DebuggerOverrides {
@@ -62,8 +60,8 @@ int __declspec(naked) __cdecl pcall_recovered(lua_State* L, int nargs, int nresu
 	};
 }
 int DoubleErrorFunc(lua::State L) {
-	L.PushValue(L.Upvalueindex(1));
-	L.PushValue(L.Upvalueindex(2));
+	L.PushValue(lua::State::Upvalueindex(1));
+	L.PushValue(lua::State::Upvalueindex(2));
 	L.PushValue(1);
 	L.PCall(1, 1);
 	L.PCall(1, 1);
@@ -196,7 +194,7 @@ void debug_lua::Hooks::InstallHook()
 
 	int pcall = reinterpret_cast<int>(GetProcAddress(handle, "lua_pcall"));
 	if (*reinterpret_cast<uint32_t*>(pcall) != 0x1024448B) {
-		MessageBoxA(0, "lua_pcall code mismatch, exception breakpoints will not work!", nullptr, 0);
+		MessageBoxA(nullptr, "lua_pcall code mismatch, exception breakpoints will not work!", nullptr, 0);
 		return;
 	}
 	pcall_jumpback = pcall + 7;
@@ -206,7 +204,7 @@ void debug_lua::Hooks::InstallHook()
 
 	int load = reinterpret_cast<int>(GetProcAddress(handle, "lua_load"));
 	if (*reinterpret_cast<uint32_t*>(load) != 0x1024448B) {
-		MessageBoxA(0, "lua_load code mismatch, syntax breakpoints will not work!", nullptr, 0);
+		MessageBoxA(nullptr, "lua_load code mismatch, syntax breakpoints will not work!", nullptr, 0);
 		return;
 	}
 	load_jumpback = load + 7;

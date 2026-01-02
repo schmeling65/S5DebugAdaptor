@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "adaptor.h"
 #include <uni_algo/case.h>
 #include "shok.h"
@@ -71,7 +70,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 		[&](const dap::StackTraceRequest& request)
 		-> dap::ResponseOrError<dap::StackTraceResponse> {
 			auto c = LuaExecutionPackagedTask<dap::StackTraceResponse>{ [this, request]() {
-				auto& l = Dbg.GetState(reinterpret_cast<lua_State*>(int(request.threadId)));
+				auto& l = Dbg.GetState(reinterpret_cast<lua_State*>(static_cast<int>(request.threadId)));
 				lua::State L{ l.L };
 				int lvl = 0;
 				lua::DebugInfo i{};
@@ -114,7 +113,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 				return c.Get();
 			}
 			catch (const std::invalid_argument&) {
-				return dap::Error("Unknown threadId '%d'", int(request.threadId));
+				return dap::Error("Unknown threadId '%d'", static_cast<int>(request.threadId));
 			}
 			catch (const lua::LuaException& e) {
 				return dap::Error("Lua error: '%s'", e.what());
@@ -147,7 +146,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 				return c.Get();
 			}
 			catch (const std::invalid_argument&) {
-				return dap::Error("Unknown frameId '%d'", int(request.frameId));
+				return dap::Error("Unknown frameId '%d'", static_cast<int>(request.frameId));
 			}
 			catch (const lua::LuaException& e) {
 				return dap::Error("Lua error: '%s'", e.what());
@@ -189,7 +188,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 									currentLineVar.variablesReference = *ref;
 								++tablenum;
 							}
-							currentLineVar.value = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-1, currentLineVar.variablesReference == 0 ? Dbg.MaxTableExpandLevels : 0));
+							currentLineVar.value = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-1, currentLineVar.variablesReference == 0 ? Debugger::MaxTableExpandLevels : 0));
 							L.Pop(1);
 							response.variables.push_back(currentLineVar);
 
@@ -200,14 +199,14 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 					else {
 						int num = 1;
 						int tablenum = 1;
-						while (const char* n = L.Debug_GetLocal(lvl, num)) {
+						while ([[maybe_unused]] const char* n = L.Debug_GetLocal(lvl, num)) {
 							if (L.IsTable(-1)) {
 								if (tablenum == var) {
-									for (auto t : L.Pairs(-1)) {
+									for ([[maybe_unused]] auto type : L.Pairs(-1)) {
 										dap::Variable currentLineVar;
 										currentLineVar.name = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-2));
 										currentLineVar.type = L.TypeName(L.Type(-1));
-										currentLineVar.value = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-1, Dbg.MaxTableExpandLevels));
+										currentLineVar.value = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-1, Debugger::MaxTableExpandLevels));
 
 										response.variables.push_back(currentLineVar);
 									}
@@ -239,7 +238,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 									currentLineVar.variablesReference = *ref;
 								++tablenum;
 							}
-							currentLineVar.value = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-1, currentLineVar.variablesReference == 0 ? Dbg.MaxTableExpandLevels : 0));
+							currentLineVar.value = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-1, currentLineVar.variablesReference == 0 ? Debugger::MaxTableExpandLevels : 0));
 							L.Pop(1);
 							response.variables.push_back(currentLineVar);
 
@@ -250,14 +249,14 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 					else {
 						int num = 1;
 						int tablenum = 1;
-						while (const char* n = L.Debug_GetUpvalue(func, num)) {
+						while ([[maybe_unused]] const char* n = L.Debug_GetUpvalue(func, num)) {
 							if (L.IsTable(-1)) {
 								if (tablenum == var) {
-									for (auto t : L.Pairs(-1)) {
+									for ([[maybe_unused]] auto type : L.Pairs(-1)) {
 										dap::Variable currentLineVar;
 										currentLineVar.name = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-2));
 										currentLineVar.type = L.TypeName(L.Type(-1));
-										currentLineVar.value = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-1, Dbg.MaxTableExpandLevels));
+										currentLineVar.value = EnsureUTF8(L.ToDebugString<Debugger::ToDebugString_Format>(-1, Debugger::MaxTableExpandLevels));
 
 										response.variables.push_back(currentLineVar);
 									}
@@ -283,7 +282,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 				return c.Get();
 			}
 			catch (const std::invalid_argument&) {
-				return dap::Error("Unknown variablesReference '%d'", int(request.variablesReference));
+				return dap::Error("Unknown variablesReference '%d'", static_cast<int>(request.variablesReference));
 			}
 			catch (const lua::LuaException& e) {
 				return dap::Error("Lua error: '%s'", e.what());
@@ -353,7 +352,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 				return c.Get();
 			}
 			catch (const std::invalid_argument&) {
-				return dap::Error("Unknown variablesReference '%d'", int(request.variablesReference));
+				return dap::Error("Unknown variablesReference '%d'", static_cast<int>(request.variablesReference));
 			}
 			catch (const lua::LuaException& e) {
 				return dap::Error("Lua error: '%s'", e.what());
@@ -382,7 +381,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 				int t = L.GetTop();
 
 				int n = Dbg.EvaluateInContext(request.expression, L, lvl);
-				r.result = Dbg.OutputString(L, n);
+				r.result = Debugger::OutputString(L, n);
 				
 				L.SetTop(t);
 				return r;
@@ -450,7 +449,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 				std::unique_lock l{ Dbg.StatesMutex };
 				dap::SetBreakpointsResponse r;
 				const dap::string& p = *request.source.path;
-				auto it = std::find_if(Dbg.Breakpoints.begin(), Dbg.Breakpoints.end(), [p](BreakpointFile f) {
+				auto it = std::find_if(Dbg.Breakpoints.begin(), Dbg.Breakpoints.end(), [p](const BreakpointFile& f) {
 					return una::caseless::compare_utf8(p, f.SourceExternal) == 0; 
 					});
 				BreakpointFile* f;
@@ -527,7 +526,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 		-> dap::ResponseOrError<dap::SourceResponse> {
 			if (request.source->sourceReference.has_value() && *request.source->sourceReference != 0) {
 				return dap::Error("Unknown source reference '%d'",
-					int(*request.source->sourceReference));
+					static_cast<int>(*request.source->sourceReference));
 			}
 
 			if (request.source.has_value() && request.source->path.has_value()) {
@@ -539,7 +538,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 
 						dap::string s{};
 						s.resize(f->GetSize());
-						f->Read(s.data(), s.size());
+						f->Read(s.data(), static_cast<long>(s.size()));
 						if (s.ends_with('\0'))
 							s.resize(s.size() - 2);
 
@@ -609,7 +608,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 			}
 
 			return dap::Error("Unknown source reference '%d'",
-				int(*request.source->sourceReference));
+				static_cast<int>(*request.source->sourceReference));
 		});
 
 	Session->registerHandler(
@@ -666,8 +665,7 @@ constexpr int scope_mask = bitmask(scope_bits) << frame_bits << state_bits;
 constexpr int var_bits = 10;
 constexpr int var_mask = bitmask(var_bits) << scope_bits << frame_bits << state_bits;
 static_assert(state_bits + frame_bits + scope_bits + var_bits == 32);
-std::optional<int> debug_lua::Adaptor::EncodeStackFrame(const DebugState& s, int lvl, Scope sc, int var)
-{
+std::optional<int> debug_lua::Adaptor::EncodeStackFrame(const DebugState& s, int lvl, Scope sc, int var) const {
 	int si = Dbg.GetStateIndex(s);
 	if ((si & state_mask) != si)
 		return std::nullopt;
@@ -680,11 +678,10 @@ std::optional<int> debug_lua::Adaptor::EncodeStackFrame(const DebugState& s, int
 		return std::nullopt;
 	return si | lvl | sco | var;
 }
-std::tuple<debug_lua::DebugState&, int, debug_lua::Adaptor::Scope, int> debug_lua::Adaptor::DecodeStackFrame(int f)
-{
+std::tuple<debug_lua::DebugState&, int, debug_lua::Adaptor::Scope, int> debug_lua::Adaptor::DecodeStackFrame(int f) const {
 	auto& s = Dbg.GetState(f & state_mask);
 	int lvl = (f & frame_mask) >> state_bits;
-	Scope sc = static_cast<Scope>((f & scope_mask) >> state_bits >> frame_bits);
+	auto sc = static_cast<Scope>((f & scope_mask) >> state_bits >> frame_bits);
 	int v = (f & var_mask) >> scope_bits >> state_bits >> frame_bits;
 	return { s, lvl, sc, v };
 }
@@ -711,8 +708,8 @@ void debug_lua::Adaptor::OnStateClosing(DebugState& s, bool lastState)
 	Session->send(ev);
 	if (lastState) {
 		{
-			dap::TerminatedEvent ev;
-			Session->send(ev);
+			dap::TerminatedEvent terminated_event;
+			Session->send(terminated_event);
 			std::lock_guard<std::mutex> lock(MutexTerminate);
 			TerminateDebugger = true;
 			Dbg.Handler = nullptr;
@@ -797,7 +794,7 @@ void debug_lua::Adaptor::OnShutdown()
 	ConditionTerminate.notify_one();
 }
 
-dap::Source debug_lua::Adaptor::MakeSource(std::string_view s) const
+dap::Source debug_lua::Adaptor::MakeSource(std::string_view s)
 {
 	dap::Source r{};
 

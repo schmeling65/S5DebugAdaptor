@@ -7,7 +7,7 @@ namespace debug_lua {
 		bool NeedsPop = false;
 
 	public:
-		EnsureBbaLoaded(std::string_view file);
+		explicit EnsureBbaLoaded(std::string_view file);
 		EnsureBbaLoaded(const EnsureBbaLoaded&) = delete;
 		EnsureBbaLoaded(EnsureBbaLoaded&&) = delete;
 		void operator=(const EnsureBbaLoaded&) = delete;

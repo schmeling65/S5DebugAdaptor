@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "utility.h"
 
 #include <stdexcept>
@@ -31,19 +30,19 @@ debug_lua::EnsureBbaLoaded::~EnsureBbaLoaded()
 
 template<UINT CP>
 std::wstring To16(std::string_view data) {
-	size_t len = MultiByteToWideChar(CP, 0, data.data(), data.size(), nullptr, 0);
+	size_t len = MultiByteToWideChar(CP, 0, data.data(), static_cast<int>(data.size()), nullptr, 0);
 	std::wstring r{};
 	r.resize(len);
-	if (!MultiByteToWideChar(CP, 0, data.data(), data.size(), r.data(), r.size()))
+	if (!MultiByteToWideChar(CP, 0, data.data(), static_cast<int>(data.size()), r.data(), static_cast<int>(r.size())))
 		throw std::invalid_argument("data");
 	return r;
 }
 template<UINT CP>
 std::string To8(std::wstring_view data) {
-	size_t len = WideCharToMultiByte(CP, 0, data.data(), data.size(), nullptr, 0, 0, nullptr);
+	size_t len = WideCharToMultiByte(CP, 0, data.data(), static_cast<int>(data.size()), nullptr, 0, nullptr, nullptr);
 	std::string r{};
 	r.resize(len);
-	if (!WideCharToMultiByte(CP, 0, data.data(), data.size(), r.data(), r.size(), 0, nullptr))
+	if (!WideCharToMultiByte(CP, 0, data.data(), static_cast<int>(data.size()), r.data(), static_cast<int>(r.size()), nullptr, nullptr))
 		throw std::invalid_argument("data");
 	return r;
 }

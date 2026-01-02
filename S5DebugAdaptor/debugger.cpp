@@ -1,17 +1,18 @@
-#include "pch.h"
 #include "debugger.h"
 #include <regex>
 #include <thread>
 #include <filesystem>
 #include <iostream>
 #include <fstream>
+#include <utility>
 #include <uni_algo/case.h>
 #include "Hooks.h"
 #include "shok.h"
 #include "winhelpers.h"
 #include "utility.h"
+#include "framework.h"
 
-bool debug_lua::operator==(DebugState d, lua_State* l)
+bool debug_lua::operator==(const DebugState& d, lua_State* l)
 {
     return d.L == l;
 }
@@ -46,7 +47,7 @@ void debug_lua::Debugger::OnStateAdded(lua_State* l, const char* name, lua::CFun
     {
         std::unique_lock lo{ StatesMutex };
         Hooks::InstallHook();
-        Hooks::RunCallback = std::bind(&Debugger::RunCallback, this);
+        Hooks::RunCallback = [this] { RunCallback(); };
         if (name == nullptr)
             name = States.empty() ? "Main Menu" : "Ingame";
         bool isingame = !States.empty();
@@ -67,12 +68,11 @@ void debug_lua::Debugger::OnStateAdded(lua_State* l, const char* name, lua::CFun
             }
             if (mapinf != nullptr) {
                 if (mapinf->IsExternalmap) {
-                    BB::CFileSystemMgr* mng = *BB::CFileSystemMgr::GlobalObj;
-                    s->MapFile = mapinf->MapFilePath;
+                    s->MapFile = static_cast<std::string_view>(mapinf->MapFilePath);
                     s->MapScriptFile = "Maps\\ExternalMap\\MapScript.lua";
                 }
                 else {
-                    s->MapScriptFile = mapinf->MapFilePath;
+                    s->MapScriptFile = static_cast<std::string_view>(mapinf->MapFilePath);
                     s->MapScriptFile.append("\\MapScript.lua");
                 }
                 MapJustOpened = true;
@@ -101,7 +101,9 @@ void debug_lua::Debugger::OnBreak(lua_State* l)
         return;
     if ((Brk & BreakSettings::Break) == BreakSettings::None)
         return;
+    // ReSharper disable once CppDFAConstantConditions
     if (Evaluating)
+        // ReSharper disable once CppDFAUnreachableCode
         return;
     DebugState* s = nullptr;
     {
@@ -144,7 +146,7 @@ void debug_lua::Debugger::OnShutdown(std::function<void()> cb)
     struct S : LuaExecutionTask {
         Debugger& D;
         std::function<void()> Cb;
-        S(Debugger& d, std::function<void()> cb) : D(d), Cb(cb) {}
+        S(Debugger& d, std::function<void()> cb) : D(d), Cb(std::move(cb)) {}
         virtual void Work() override {
             if (D.Handler)
                 D.Handler->OnShutdown();
@@ -152,7 +154,7 @@ void debug_lua::Debugger::OnShutdown(std::function<void()> cb)
             delete this;
         }
     };
-    auto c = new S{*this, cb};
+    auto c = new S{*this, std::move(cb)};
     RunInSHoKThread(*c);
 }
 
@@ -196,8 +198,8 @@ void debug_lua::Debugger::SetBreakSettings(BreakSettings s)
 
 int debug_lua::Debugger::EvaluateInContext(std::string_view s, lua::State L, int lvl)
 {
-    std::string pre = "";
-    std::string post = "";
+    std::string pre{};
+    std::string post{};
     std::string var = "r";
     VarOverrideReset over{ Evaluating, true };
     if (lvl >= 0 && L.Debug_IsStackLevelValid(lvl)) {
@@ -205,11 +207,11 @@ int debug_lua::Debugger::EvaluateInContext(std::string_view s, lua::State L, int
         int num = 1;
         while (const char* n = L.Debug_GetLocal(lvl, num)) {
             L.Pop(1);
-            std::string_view s{ n };
-            if (IsIdentifier(s) && std::find(varstaken.begin(), varstaken.end(), s) == varstaken.end()) {
-                varstaken.push_back(s);
-                pre.append(std::format("local {} = LuaDebugger.GetLocal({}, {})\r\n", s, lvl+2, num));
-                post.append(std::format("LuaDebugger.SetLocal({}, {}, {})\r\n", lvl + 2, num, s));
+            std::string_view sv{ n };
+            if (IsIdentifier(sv) && std::find(varstaken.begin(), varstaken.end(), sv) == varstaken.end()) {
+                varstaken.push_back(sv);
+                pre.append(std::format("local {} = LuaDebugger.GetLocal({}, {})\r\n", sv, lvl+2, num));
+                post.append(std::format("LuaDebugger.SetLocal({}, {}, {})\r\n", lvl + 2, num, sv));
             }
 
             ++num;
@@ -219,11 +221,11 @@ int debug_lua::Debugger::EvaluateInContext(std::string_view s, lua::State L, int
         num = 1;
         while (const char* n = L.Debug_GetUpvalue(-1, num)) {
             L.Pop(1);
-            std::string_view s{ n };
-            if (IsIdentifier(s) && std::find(varstaken.begin(), varstaken.end(), s) == varstaken.end()) {
-                varstaken.push_back(s);
-                pre.append(std::format("local {} = LuaDebugger.GetUpvalue({}, {})\r\n", s, lvl + 2, num));
-                post.append(std::format("LuaDebugger.SetUpvalue({}, {}, {})\r\n", lvl + 2, num, s));
+            std::string_view sv{ n };
+            if (IsIdentifier(sv) && std::find(varstaken.begin(), varstaken.end(), sv) == varstaken.end()) {
+                varstaken.push_back(sv);
+                pre.append(std::format("local {} = LuaDebugger.GetUpvalue({}, {})\r\n", sv, lvl + 2, num));
+                post.append(std::format("LuaDebugger.SetUpvalue({}, {}, {})\r\n", lvl + 2, num, sv));
             }
 
             ++num;
@@ -273,7 +275,7 @@ std::string debug_lua::Debugger::OutputString(lua::State L, int n)
 std::string debug_lua::Debugger::ToDebugString_Format::LuaFuncSourceFormat(lua::State L, int index, const lua::DebugInfo& d)
 {
     L.PushLightUserdata(&Debugger::Hook);
-    L.GetTableRaw(L.REGISTRYINDEX);
+    L.GetTableRaw(lua::State::REGISTRYINDEX);
     auto th = static_cast<Debugger*>(L.ToUserdata(-1));
     L.Pop(1);
     auto src = d.Source == nullptr ? "" : th->FindSource(th->GetState(L.GetState()), d.Source);
@@ -424,16 +426,16 @@ void debug_lua::Debugger::InitializeLua(lua::State L, bool mainmenu, lua::CFunct
 {
     L.PushLightUserdata(&Debugger::Hook);
     L.PushLightUserdata(this);
-    L.SetTableRaw(L.REGISTRYINDEX);
+    L.SetTableRaw(lua::State::REGISTRYINDEX);
 
     std::array lib{
         lua::FuncReference::GetRef<Debugger, &Debugger::Log>(*this, "Log"),
         lua::FuncReference::GetRef<Debugger, &Debugger::IsDebuggerAttached>(*this, "IsDebuggerAttached"),
-        lua::FuncReference::GetRef<Debugger, &Debugger::SetLocal>(*this, "SetLocal"),
-        lua::FuncReference::GetRef<Debugger, &Debugger::GetLocal>(*this, "GetLocal"),
-        lua::FuncReference::GetRef<Debugger, &Debugger::SetUpvalue>(*this, "SetUpvalue"),
-        lua::FuncReference::GetRef<Debugger, &Debugger::GetUpvalue>(*this, "GetUpvalue"),
-        lua::FuncReference::GetRef<Debugger, &Debugger::WriteTableToFile>(*this, "WriteTableToFile"),
+        lua::FuncReference::GetRef<&Debugger::SetLocal>("SetLocal"),
+        lua::FuncReference::GetRef<&Debugger::GetLocal>("GetLocal"),
+        lua::FuncReference::GetRef<&Debugger::SetUpvalue>("SetUpvalue"),
+        lua::FuncReference::GetRef<&Debugger::GetUpvalue>("GetUpvalue"),
+        lua::FuncReference::GetRef<&Debugger::WriteTableToFile>("WriteTableToFile"),
         lua::FuncReference{"ShutdownDebugger", shutdown},
         };
     L.RegisterGlobalLib(lib, "LuaDebugger");
@@ -496,7 +498,7 @@ void debug_lua::Debugger::DoAddSource(DebugState& s, std::string_view src)
 void debug_lua::Debugger::Hook(lua::State L, lua::ActivationRecord ar)
 {
     L.PushLightUserdata(&Debugger::Hook);
-    L.GetTableRaw(L.REGISTRYINDEX);
+    L.GetTableRaw(lua::State::REGISTRYINDEX);
     auto* th = static_cast<Debugger*>(L.ToUserdata(-1));
     L.Pop(1);
     auto& s = th->GetState(L.GetState());
@@ -504,6 +506,7 @@ void debug_lua::Debugger::Hook(lua::State L, lua::ActivationRecord ar)
     if (th->Evaluating)
         return;
 
+    // ReSharper disable once CppDFAUnusedValue
     int line = -1;
     bool checkBreakpoint = false;
 
@@ -573,7 +576,7 @@ void debug_lua::Debugger::Hook(lua::State L, lua::ActivationRecord ar)
 int debug_lua::Debugger::ErrorFunc(lua::State L)
 {
     L.PushLightUserdata(&Debugger::Hook);
-    L.GetTableRaw(L.REGISTRYINDEX);
+    L.GetTableRaw(lua::State::REGISTRYINDEX);
     auto th = static_cast<Debugger*>(L.ToUserdata(-1));
     L.Pop(1);
 
@@ -583,8 +586,8 @@ int debug_lua::Debugger::ErrorFunc(lua::State L)
         return 1;
 
     BreakSettings tocheck = BreakSettings::PCall;
-    if (L.IsLightUserdata(L.Upvalueindex(1))) {
-        auto* di = static_cast<lua::DebugInfo*>(L.ToUserdata(L.Upvalueindex(1)));
+    if (L.IsLightUserdata(lua::State::Upvalueindex(1))) {
+        auto* di = static_cast<lua::DebugInfo*>(L.ToUserdata(lua::State::Upvalueindex(1)));
         if (di->What == std::string_view("C") && di->NameWhat == std::string_view("global") && (di->Name == std::string_view("xpcall") || di->Name == std::string_view("pcall")))
             tocheck = BreakSettings::XPCall;
     }
@@ -608,7 +611,7 @@ void debug_lua::Debugger::SyntaxErrorFunc(lua_State* l, int err)
 {
     lua::State L{ l };
     L.PushLightUserdata(&Debugger::Hook);
-    L.GetTableRaw(L.REGISTRYINDEX);
+    L.GetTableRaw(lua::State::REGISTRYINDEX);
     auto th = static_cast<Debugger*>(L.ToUserdata(-1));
     L.Pop(1);
 
@@ -622,16 +625,15 @@ void debug_lua::Debugger::SyntaxErrorFunc(lua_State* l, int err)
     th->St = Status::Paused;
     th->Re = Request::Pause;
 
-    auto msg = std::format("{}: {}", L.ErrorCodeFormat(static_cast<lua::ErrorCode>(err)), L.ToStringView(-1));
+    auto msg = std::format("{}: {}", lua::State::ErrorCodeFormat(static_cast<lua::ErrorCode>(err)), L.ToStringView(-1));
     th->Handler->OnPaused(s, Reason::Exception, msg);
 
     th->WaitForRequest();
     th->TranslateRequest(L);
     th->St = Status::Running;
-    return;
 }
 
-int debug_lua::Debugger::Log(lua::State L)
+int debug_lua::Debugger::Log(lua::State L) const
 {
     if (Handler) {
         auto s = OutputString(L, L.GetTop());
@@ -689,7 +691,7 @@ int debug_lua::Debugger::SetUpvalue(lua::State L)
     L.Debug_SetLocal(-2, L.CheckInt(2));
     return 0;
 }
-int debug_lua::Debugger::IsDebuggerAttached(lua::State L)
+int debug_lua::Debugger::IsDebuggerAttached(lua::State L) const
 {
     L.Push(Handler != nullptr);
     return 1;

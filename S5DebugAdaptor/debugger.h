@@ -43,6 +43,7 @@ class enum_is_flags<debug_lua::BreakSettings> : public std::true_type {};
 
 namespace debug_lua {
 	struct IDebugEventHandler {
+		virtual ~IDebugEventHandler() = default;
 		virtual void OnStateOpened(DebugState& s) = 0;
 		virtual void OnStateClosing(DebugState& s, bool lastState) = 0;
 		virtual void OnPaused(DebugState& s, Reason r, std::string_view exceptionText) = 0;
@@ -51,9 +52,12 @@ namespace debug_lua {
 		virtual void OnShutdown() = 0;
 	};
 
-	bool operator==(DebugState d, lua_State* l);
+	bool operator==(const DebugState& d, lua_State* l);
 
 	class LuaExecutionTask {
+	public:
+		virtual ~LuaExecutionTask() = default;
+	private:
 		friend class Debugger;
 	protected:
 		virtual void Work() = 0;
@@ -64,7 +68,8 @@ namespace debug_lua {
 
 	public:
 		template<class C>
-		LuaExecutionPackagedTask(C&& c) : Task(std::forward<C>(c)) {}
+		requires (!std::same_as<C, LuaExecutionPackagedTask>)
+		explicit LuaExecutionPackagedTask(C&& c) : Task(std::forward<C>(c)) {}
 
 		R Get() {
 			auto f = Task.get_future();
@@ -138,7 +143,7 @@ namespace debug_lua {
 
 		std::mutex StatesMutex;
 
-		inline const std::vector<DebugState>& GetStates() const {
+		[[nodiscard]] inline const std::vector<DebugState>& GetStates() const {
 			return States;
 		}
 		DebugState& GetState(lua_State* l);
@@ -157,14 +162,14 @@ namespace debug_lua {
 		void SetBreakSettings(BreakSettings s);
 
 		int EvaluateInContext(std::string_view s, lua::State L, int lvl);
-		std::string OutputString(lua::State L, int n);
+		static std::string OutputString(lua::State L, int n);
 
 		struct ToDebugString_Format : lua::State::ToDebugString_Format {
 			static std::string LuaFuncSourceFormat(lua::State L, int index, const lua::DebugInfo& d);
 			static std::string StringFormat(lua::State L, int index);
 		};
 
-		std::string TranslateSourceString(const DebugState& s, std::string_view src);
+		static std::string TranslateSourceString(const DebugState& s, std::string_view src);
 
 		Source* SearchInternal(std::string_view i);
 		Source* SearchExternal(std::string_view e);
@@ -181,11 +186,11 @@ namespace debug_lua {
 
 	private:
 		Source* SearchExternalUnsafe(std::string_view e, bool fileOnly = false);
-		bool IsIdentifier(std::string_view s);
+		static bool IsIdentifier(std::string_view s);
 		void CheckRun();
 		void RunCallback();
 		void CheckHooked();
-		void SetHooked(DebugState& s, bool h, bool imm);
+		static void SetHooked(DebugState& s, bool h, bool imm);
 		void WaitForRequest();
 		void TranslateRequest(lua::State L);
 		void InitializeLua(lua::State L, bool mainmenu, lua::CFunction shutdown);
@@ -198,12 +203,14 @@ namespace debug_lua {
 		static int ErrorFunc(lua::State L);
 		static void SyntaxErrorFunc(lua_State* L, int err);
 
-		int Log(lua::State L);
-		int GetLocal(lua::State L);
-		int SetLocal(lua::State L);
-		int GetUpvalue(lua::State L);
-		int SetUpvalue(lua::State L);
-		int IsDebuggerAttached(lua::State L);
-		int WriteTableToFile(lua::State L);
+		[[nodiscard]] int Log(lua::State L) const;
+		static int GetLocal(lua::State L);
+
+		static int SetLocal(lua::State L);
+		static int GetUpvalue(lua::State L);
+		static int SetUpvalue(lua::State L);
+		[[nodiscard]] int IsDebuggerAttached(lua::State L) const;
+
+		static int WriteTableToFile(lua::State L);
 	};
 }

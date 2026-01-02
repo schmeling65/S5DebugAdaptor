@@ -2,7 +2,6 @@
 
 #include <dap/io.h>
 #include <dap/network.h>
-#include <dap/protocol.h>
 #include <dap/session.h>
 
 #include "adaptor.h"
@@ -15,6 +14,6 @@ namespace debug_lua {
 		Debugger& Dbg;
 
 	public:
-		Server(Debugger& d);
+		explicit Server(Debugger& d);
 	};
 }

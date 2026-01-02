@@ -1,9 +1,9 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
-#include "pch.h"
 #include "luapp/luapp50.h"
 #include "debugger.h"
 #include "adaptor.h"
 #include "server.h"
+#include "framework.h"
 
 debug_lua::Debugger debugger{};
 //std::unique_ptr<debug_lua::Adaptor> adap = nullptr;
@@ -23,7 +23,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
     case DLL_PROCESS_DETACH:
-        break;
+	default:
+    	break;
     }
     return TRUE;
 }

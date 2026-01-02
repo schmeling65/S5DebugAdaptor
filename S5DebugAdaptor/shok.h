@@ -4,6 +4,7 @@
 #include <string_view>
 #include <string>
 #include "enumflags.h"
+#include "framework.h"
 
 // some minimal shok stuff to interface with
 // for more, see https://github.com/mcb5637/S5BinkHook
@@ -26,14 +27,17 @@ namespace shok {
 	struct Allocator {
 		typedef T value_type;
 		Allocator() = default;
-		template<class U> constexpr Allocator(const Allocator<U>&) noexcept {}
+		template<class U>
+		explicit constexpr Allocator(const Allocator<U>&) noexcept {}
 
+		// ReSharper disable once CppMemberFunctionMayBeStatic
 		[[nodiscard]] T* allocate(size_t n) noexcept
 		{
 			void* p = Malloc(n * sizeof(T));
 			return static_cast<T*>(p);
 		}
-		void deallocate(T* p, size_t n) noexcept
+		// ReSharper disable once CppMemberFunctionMayBeStatic
+		void deallocate(T* p, size_t) noexcept
 		{
 			Free(p);
 		}
@@ -55,26 +59,26 @@ namespace shok {
 		auto begin() noexcept {
 			return Internal.begin();
 		}
-		const auto begin() const noexcept {
+		[[nodiscard]] auto begin() const noexcept {
 			return Internal.begin();
 		}
 		auto end() noexcept {
 			return Internal.end();
 		}
-		const auto end() const noexcept {
+		[[nodiscard]] auto end() const noexcept {
 			return Internal.end();
 		}
 		// these get used by vs for some reason over the official begin/end in for loops
-		auto _Unchecked_begin() noexcept {
+		auto _Unchecked_begin() noexcept { // NOLINT(*-reserved-identifier)
 			return Internal._Unchecked_begin();
 		}
-		auto _Unchecked_begin() const noexcept {
+		[[nodiscard]]auto _Unchecked_begin() const noexcept { // NOLINT(*-reserved-identifier)
 			return Internal._Unchecked_begin();
 		}
-		auto _Unchecked_end() noexcept {
+		auto _Unchecked_end() noexcept { // NOLINT(*-reserved-identifier)
 			return Internal._Unchecked_end();
 		}
-		auto _Unchecked_end() const noexcept {
+		[[nodiscard]]auto _Unchecked_end() const noexcept { // NOLINT(*-reserved-identifier)
 			return Internal._Unchecked_end();
 		}
 		auto& operator[](size_t p) {
@@ -83,10 +87,10 @@ namespace shok {
 		const auto& operator[](size_t p) const {
 			return Internal[p];
 		}
-		size_t size() const noexcept {
+		[[nodiscard]]size_t size() const noexcept {
 			return Internal.size();
 		}
-		const T* data() const noexcept {
+		[[nodiscard]]const T* data() const noexcept {
 			return Internal.data();
 		}
 		T* data() noexcept {
@@ -95,7 +99,7 @@ namespace shok {
 		T& at(size_t p) {
 			return Internal.at(p);
 		}
-		const T& at(size_t p) const {
+		[[nodiscard]]const T& at(size_t p) const {
 			return Internal.at(p);
 		}
 
@@ -237,13 +241,13 @@ class enum_is_flags<BB::IStream::Flags> : public std::true_type {};
 
 namespace BB {
 	class CFileStream : public IStream { // used to read files directly
-		HANDLE Handle = 0;
+		HANDLE Handle = nullptr;
 	public:
 		char* Filename = nullptr;
 		static constexpr int vtp = 0x761C98;
 
 		CFileStream();
-		~CFileStream();
+		virtual ~CFileStream() override;
 		bool OpenFile(const char* name, Flags mode);
 	};
 	class CMemoryStream : public IStream { // read from archives
@@ -257,7 +261,7 @@ namespace BB {
 		CMemoryStream();
 		void CopyToStream(IStream& to) const;
 		void CopyFromStream(IStream& from);
-		inline std::string_view GetData() {
+		[[nodiscard]] inline std::string_view GetData() const {
 			return std::string_view{ static_cast<char*>(Data), static_cast<size_t>(Size) };
 		}
 	};
@@ -285,7 +289,7 @@ namespace BB {
 		virtual ~IFileSystem() = default;
 		virtual void Destroy() = 0;
 		virtual void FillFilesInDirectory(void* files, const char* directoryName, SearchOptions opt) = 0;
-		virtual void GetFileInfo(FileInfo* out, const char* file, int zero = 0, char* absPath = nullptr) = 0;
+		virtual void GetFileInfo(FileInfo* out, const char* file, int zero = 0, char* absPath = nullptr) = 0; // NOLINT(*-default-arguments)
 		virtual IStream* OpenFileStream(const char* path, BB::IStream::Flags mode) = 0;
 		virtual bool OpenFileHandle(const char* path, int* pHandle, size_t* psize) = 0; // 5
 
@@ -303,7 +307,7 @@ namespace BB {
 	public:
 		static inline constexpr int vtp = 0x780398;
 	};
-	class CDirectoryFileSystem : public CDirectoryFileSystemSpecialOpenFileOnly {
+	class CDirectoryFileSystem : public CDirectoryFileSystemSpecialOpenFileOnly { // NOLINT(*-pro-type-member-init)
 	public:
 		char* Path;
 		size_t PathLen;
@@ -359,7 +363,7 @@ namespace BB {
 		static inline constexpr int vtp = 0x77FABC;
 
 		DirectoryEntry* SearchByHash(const char* filename);
-		DirectoryEntry* GetByOffset(size_t offset);
+		DirectoryEntry* GetByOffset(size_t offset) const;
 
 		static inline CBBArchiveFile* (__stdcall* const Create)() = reinterpret_cast<CBBArchiveFile * (__stdcall*)()>(0x551701);
 		static std::unique_ptr<CBBArchiveFile, CppLogic::DestroyCaller<CBBArchiveFile>> CreateUnique();
@@ -380,7 +384,7 @@ namespace BB {
 		virtual void SetRemoveData() = 0;
 		virtual void MakeAbsolute(char* abs, const char* rel) = 0; // 12 seems only to work with external files, not with files in bba archives
 	};
-	class CFileSystemMgr : public IFileSystemMgr {
+	class CFileSystemMgr : public IFileSystemMgr { // NOLINT(*-pro-type-member-init)
 	public:
 		shok::Vector<BB::IFileSystem*> LoadOrder;
 		BB::IFileSystem* Override; // 5
@@ -399,7 +403,6 @@ namespace BB {
 		static inline BB::CFileSystemMgr** const GlobalObj = reinterpret_cast<BB::CFileSystemMgr**>(0x88F088);
 		static inline const char* (__cdecl* const PathGetExtension)(const char* path) = reinterpret_cast<const char* (__cdecl*)(const char*)>(0x40BAB3);
 
-		static const char* ReadFileToString(const char* name, size_t* size);
 		static bool DoesFileExist(const char* name);
 	};
 	//constexpr int i = offsetof(CFileSystemMgr, Override) / 4;
@@ -413,12 +416,13 @@ namespace BB {
 		static constexpr int vtp = 0x761C60;
 
 		CFileStreamEx();
-		~CFileStreamEx();
+		virtual ~CFileStreamEx() override;
 		bool OpenFile(const char* filename, Flags mode);
 		void Close();
 	};
 
 	class CEvent;
+	// ReSharper disable once CppPolymorphicClassWithNonVirtualPublicDestructor
 	class IPostEvent {
 	public:
 		virtual void __stdcall PostEvent(BB::CEvent* ev) = 0;
@@ -426,6 +430,7 @@ namespace BB {
 }
 
 namespace ECore {
+	// ReSharper disable once CppPolymorphicClassWithNonVirtualPublicDestructor
 	class IReplayStreamExtension {
 		virtual void unknown0();
 	};
@@ -450,23 +455,23 @@ namespace shok {
 		size_t allocated = 0;
 
 	public:
-		String(const char* s);
+		explicit String(const char* s);
 		String(const String& c);
-		String(const std::string& s);
-		String(const std::string_view& s);
+		explicit String(const std::string& s);
+		explicit String(const std::string_view& s);
 		void assign(const char* s);
 		void assign(const char* s, size_t len);
-		const char* c_str() const;
-		size_t size() const;
+		[[nodiscard]] const char* c_str() const;
+		[[nodiscard]] size_t size() const;
 		~String();
 		String();
 		std::strong_ordering operator<=>(const String& r) const;
 		bool operator==(const String& r) const;
-		void operator=(const String& s);
-		void operator=(const std::string& s);
-		void operator=(const std::string_view& s);
-		void operator=(const char* s);
-		operator std::string_view() const;
+		String& operator=(const String& s);
+		String& operator=(const std::string& s);
+		String& operator=(const std::string_view& s);
+		String& operator=(const char* s);
+		explicit operator std::string_view() const;
 	};
 	static_assert(sizeof(String) == 7 * 4);
 	std::strong_ordering operator<=>(const String& a, const char* b);
@@ -476,6 +481,7 @@ namespace shok {
 }
 
 namespace GS3DTools {
+	// ReSharper disable once CppPolymorphicClassWithNonVirtualPublicDestructor
 	class CMapData : public ECore::IReplayStreamExtension {
 	public:
 		shok::String MapName;
@@ -493,8 +499,8 @@ namespace Framework {
 	struct SKeys {
 		shok::Vector<int> Keys;
 
-		bool Check(const SKeys& map) const;
-		bool CheckSP(const SKeys& map) const;
+		[[nodiscard]] bool Check(const SKeys& map) const;
+		[[nodiscard]] bool CheckSP(const SKeys& map) const;
 		// set to extra num 51BA6A __thiscall
 	};
 
@@ -559,6 +565,7 @@ namespace Framework {
 }
 
 namespace Framework {
+	// ReSharper disable once CppPolymorphicClassWithNonVirtualPublicDestructor
 	class CMain : public BB::IPostEvent {
 	public:
 		enum class Mode : int {
@@ -624,7 +631,6 @@ namespace Framework {
 	static_assert(offsetof(Framework::CMain, ToDo) == 171 * 4);
 	static_assert(offsetof(Framework::CMain, SavegameToLoad) == 90 * 4);
 	static_assert(offsetof(Framework::CMain, CampagnInfoHandler) == 174 * 4);
-	//constexpr int i = offsetof(Framework::CMain, ToDo) / 4;
 }
 
 namespace shok {

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <string_view>
+#include "framework.h"
 using byte = uint8_t;
 struct lua_State;
 

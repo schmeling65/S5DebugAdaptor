@@ -27,8 +27,8 @@ namespace debug_lua {
 	public:
 		Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter>& socket);
 
-		std::optional<int> EncodeStackFrame(const DebugState& s, int lvl, Scope sc, int var);
-		std::tuple<DebugState&, int, Scope, int> DecodeStackFrame(int f);
+		[[nodiscard]] std::optional<int> EncodeStackFrame(const DebugState& s, int lvl, Scope sc, int var) const;
+		[[nodiscard]] std::tuple<DebugState&, int, Scope, int> DecodeStackFrame(int f) const;
 		void WaitUntilDisconnected();
 
 		virtual void OnStateOpened(DebugState& s) override;
@@ -38,6 +38,6 @@ namespace debug_lua {
 		virtual void OnSourceAdded(DebugState& s, std::string_view f) override;
 		virtual void OnShutdown() override;
 	private:
-		dap::Source MakeSource(std::string_view s) const;
+		[[nodiscard]] static dap::Source MakeSource(std::string_view s) ;
 	};
 }
