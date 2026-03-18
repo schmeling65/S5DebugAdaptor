@@ -369,12 +369,12 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 				int lvl;
 				if (request.frameId.has_value()) {
 					auto [s, lvl2, _1, _2] = DecodeStackFrame(static_cast<int>(*request.frameId));
-					L = s.L;
+					L = lua::State{s.L};
 					lvl = lvl2;
 				}
 				else {
 					lvl = 0;
-					L = Dbg.GetStates().back().L;
+					L = lua::State{Dbg.GetStates().back().L};
 				}
 				
 				dap::EvaluateResponse r{};
@@ -634,7 +634,7 @@ debug_lua::Adaptor::Adaptor(Debugger& d, const std::shared_ptr<dap::ReaderWriter
 					std::lock_guard<std::mutex> lock(Dbg.StatesMutex);
 					auto& s = Dbg.GetStates();
 					if (!s.empty())
-						Dbg.EvaluateInContext("Framework.ExitGame()", s[0].L, -1);
+						Dbg.EvaluateInContext("Framework.ExitGame()", lua::State{s[0].L}, -1);
 					} };
 				Dbg.RunInSHoKThread(c);
 				c.Get();

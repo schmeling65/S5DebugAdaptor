@@ -4,7 +4,7 @@
   "description": "S5 lua debugging",
   "version": "1.0.1",
   "engines": {
-    "vscode": "^1.93.0"
+    "vscode": "^1.110.0"
   },
   "categories": [
     "Debuggers"
@@ -91,7 +91,7 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run package & xcopy /Y ..\\README.md .\\ & xcopy /Y ..\\LICENSE .\\",
+    "vscode:prepublish": "npm run package & cp ../README.md ./ & cp ../LICENSE ./",
     "compile": "webpack",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
@@ -102,18 +102,16 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
-    "@types/vscode": "^1.93.0",
-    "@types/mocha": "^10.0.7",
-    "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.5.0",
-    "@typescript-eslint/parser": "^8.5.0",
-    "eslint": "^9.10.0",
-    "glob": "^13.0.0",
-    "mocha": "^11.7.5",
+    "@types/vscode": "^1.110.0",
+    "@types/node": "^25.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.1",
+    "@typescript-eslint/parser": "^8.57.1",
+    "eslint": "^10.0.3",
+    "glob": "^13.0.6",
     "typescript": "^5.6.2",
     "ts-loader": "^9.5.1",
-    "webpack": "^5.94.0",
-    "webpack-cli": "^6.0.1",
+    "webpack": "^5.105.4",
+    "webpack-cli": "^7.0.2",
     "@vscode/test-electron": "^2.4.1"
   }
 }

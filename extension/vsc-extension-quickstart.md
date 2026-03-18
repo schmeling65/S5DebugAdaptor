@@ -47,11 +47,15 @@
 * Automate builds by setting up [Continuous Integration](https://code.visualstudio.com/api/working-with-extensions/continuous-integration).
 
 
-notes:
-extension dev:
+## notes:
+
+### extension dev:
 - apt install nodejs npm
 - npm install
 - npm outdated
-- edir package.json
+- edit package.json
 - npm update
-package: vsce package
+
+
+### package:
+vsce package
