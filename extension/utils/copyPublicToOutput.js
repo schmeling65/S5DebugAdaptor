@@ -11,7 +11,6 @@ function copyDir(src, dest) {
     for (const entry of entries) {
         const srcPath = path.join(src, entry.name);
         const destPath = path.join(dest, entry.name);
-
         if (entry.isDirectory()) {
             copyDir(srcPath, destPath);
         } else {
@@ -23,10 +22,10 @@ function copyDir(src, dest) {
 try {
     if (fs.existsSync(srcDir)) {
         copyDir(srcDir, destDir);
-        console.log('Kopieren erfolgreich abgeschlossen!');
+        console.log('Copying successfull!');
     } else {
-        console.error('Quellordner "src/public" existiert nicht.');
+        console.error('source directory "src/public" not existing.');
     }
 } catch (err) {
-    console.error('Fehler beim Kopieren:', err);
+    console.error('Error on copying:', err);
 }

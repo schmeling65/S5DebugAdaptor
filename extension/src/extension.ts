@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import {TextDecoder} from 'util';
+import { MySidebarProvider } from './webview/webview';
 
 export function activate(context: vscode.ExtensionContext) {
     const provider = new MySidebarProvider(context);
@@ -13,28 +13,3 @@ export function deactivate() {
 
 }
 
-class MySidebarProvider implements vscode.WebviewViewProvider {
-    constructor(private readonly extensionContext: vscode.ExtensionContext,) {}
-
-    public async resolveWebviewView( webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, token: vscode.CancellationToken) {
-        webviewView.webview.options = { enableScripts: true, localResourceRoots: [this.extensionContext.extensionUri] };
-        webviewView.webview.html = await this.getHtmlForWebview(webviewView.webview);
-        webviewView.webview.onDidReceiveMessage(data => {
-            switch (data.type) {
-                case 'toggleChanged': {
-                    const status = data.value ? 'aktiviert' : 'deaktiviert';
-                    vscode.window.showInformationMessage(`Feature ist jetzt ${status}!`);
-                    break;
-                }
-            }
-        });
-
-    }
-
-    private async getHtmlForWebview(webview: vscode.Webview) {
-        const extensionUri = this.extensionContext.extensionUri
-        const rawdata = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri,"out","htmlwebview","index.html"))
-        const htmlstring = new TextDecoder("utf-8").decode(rawdata)
-        return htmlstring
-    }
-}
