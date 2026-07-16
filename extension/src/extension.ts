@@ -1,26 +1,40 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
+import {TextDecoder} from 'util';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+    const provider = new MySidebarProvider(context);
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "extension" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('extension.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from extension!');
-	});
-
-	context.subscriptions.push(disposable);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('S5LuaDebuggerAdaptor-toggle-view', provider)
+    );
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+
+}
+
+class MySidebarProvider implements vscode.WebviewViewProvider {
+    constructor(private readonly extensionContext: vscode.ExtensionContext,) {}
+
+    public async resolveWebviewView( webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, token: vscode.CancellationToken) {
+        webviewView.webview.options = { enableScripts: true, localResourceRoots: [this.extensionContext.extensionUri] };
+        webviewView.webview.html = await this.getHtmlForWebview(webviewView.webview);
+        webviewView.webview.onDidReceiveMessage(data => {
+            switch (data.type) {
+                case 'toggleChanged': {
+                    const status = data.value ? 'aktiviert' : 'deaktiviert';
+                    vscode.window.showInformationMessage(`Feature ist jetzt ${status}!`);
+                    break;
+                }
+            }
+        });
+
+    }
+
+    private async getHtmlForWebview(webview: vscode.Webview) {
+        const extensionUri = this.extensionContext.extensionUri
+        const rawdata = await vscode.workspace.fs.readFile(vscode.Uri.joinPath(extensionUri,"out","htmlwebview","index.html"))
+        const htmlstring = new TextDecoder("utf-8").decode(rawdata)
+        return htmlstring
+    }
+}
