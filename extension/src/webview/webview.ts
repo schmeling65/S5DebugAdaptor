@@ -12,9 +12,11 @@ export class MySidebarProvider implements vscode.WebviewViewProvider {
     private isCheckboxChecked = false;
     private persistentStorageKeyName = "IsS5LuaDebuggerActive"
     private registerdDebugAdapterDescriptorFactory: vsCodeDisposable =  undefined
+    private S5DebugAdapterDescriptorFactoryDisposable: S5DebugAdapterDescriptorFactory
     constructor(private readonly extensionContext: vscode.ExtensionContext,) {
         let checkboxChecked: boolean = this.extensionContext.globalState.get(this.persistentStorageKeyName)!;
         this.isCheckboxChecked = checkboxChecked
+        this.S5DebugAdapterDescriptorFactoryDisposable = new S5DebugAdapterDescriptorFactory()
     }
 
     public async resolveWebviewView( webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, token: vscode.CancellationToken) {
@@ -31,7 +33,6 @@ export class MySidebarProvider implements vscode.WebviewViewProvider {
             switch (message.type) {
                 case 'toggleChanged': {
                     await this.extensionContext.globalState.update(this.persistentStorageKeyName, message.value);
-                    console.log(typeof(message.value))
                      this.activateOrStopGameSearch(message.value)
                     break;
                 }
@@ -41,11 +42,12 @@ export class MySidebarProvider implements vscode.WebviewViewProvider {
 
     private activateOrStopGameSearch(status: boolean) {
         if (status) {
-            const S5DebugAdapterDescriptorFactoryDisposable = new S5DebugAdapterDescriptorFactory()
-            this.registerdDebugAdapterDescriptorFactory = vscode.debug.registerDebugAdapterDescriptorFactory('S5lua', S5DebugAdapterDescriptorFactoryDisposable)
+            this.registerdDebugAdapterDescriptorFactory = vscode.debug.registerDebugAdapterDescriptorFactory('s5lua', this.S5DebugAdapterDescriptorFactoryDisposable)
             this.extensionContext.subscriptions.push(this.registerdDebugAdapterDescriptorFactory);
+            this.S5DebugAdapterDescriptorFactoryDisposable.searchForGame()
         }
         else {
+            this.S5DebugAdapterDescriptorFactoryDisposable.stopSearchForGame()
             this.registerdDebugAdapterDescriptorFactory!.dispose()
             this.registerdDebugAdapterDescriptorFactory = undefined
         }
