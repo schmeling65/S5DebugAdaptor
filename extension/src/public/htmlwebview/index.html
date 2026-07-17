@@ -25,7 +25,6 @@
     <script>
       const vscode = acquireVsCodeApi();
       const toggle = document.getElementById("toggle");
-
       toggle.addEventListener("change", () => {
         vscode.postMessage({
           type: "toggleChanged",

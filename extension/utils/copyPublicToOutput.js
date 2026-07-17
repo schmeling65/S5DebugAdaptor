@@ -22,9 +22,8 @@ function copyDir(src, dest) {
 try {
     if (fs.existsSync(srcDir)) {
         copyDir(srcDir, destDir);
-        console.log('Copying successfull!');
     } else {
-        console.error('source directory "src/public" not existing.');
+        throw new Error('source directory "src/public" not existing.')
     }
 } catch (err) {
     console.error('Error on copying:', err);
