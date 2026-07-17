@@ -24,6 +24,7 @@
 
     <script>
       const vscode = acquireVsCodeApi();
+      vscode.getState();
       const toggle = document.getElementById("toggle");
       toggle.addEventListener("change", () => {
         vscode.postMessage({
@@ -36,8 +37,7 @@
         switch (message.command) {
           case "setCheckboxToTrue":
             document.getElementById("toggle").checked = message.value;
-            break;
-        }
+            break;      }
       });
     </script>
   </body>
