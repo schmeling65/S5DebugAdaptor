@@ -27,7 +27,7 @@ export class S5DebugAdapterDescriptorFactory implements vscode.DebugAdapterDescr
 	public searchForGame() {
 		this.searchIntervall =  setInterval( () =>{
 			console.log("Suchintervall ausgeführt")
-		})
+		},2000)
 	}
 
 	public stopSearchForGame() {
