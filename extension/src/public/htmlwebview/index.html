@@ -31,6 +31,14 @@
           value: toggle.checked,
         });
       });
+      window.addEventListener("message", (event) => {
+        const message = event.data;
+        switch (message.command) {
+          case "setCheckboxToTrue":
+            document.getElementById("toggle").checked = message.value;
+            break;
+        }
+      });
     </script>
   </body>
 </html>

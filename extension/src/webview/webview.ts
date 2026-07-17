@@ -1,7 +1,9 @@
 import * as vscode from 'vscode'
 import { S5DebugAdapterDescriptorFactory } from '../debugadaptor/debugadaptor';
 
-interface checkboxToggleIsActive {
+type vsCodeDisposable = vscode.Disposable | undefined
+
+interface messageContent {
     type: string,
     value: boolean,
 }
@@ -9,7 +11,7 @@ interface checkboxToggleIsActive {
 export class MySidebarProvider implements vscode.WebviewViewProvider {
     private isCheckboxChecked = false;
     private persistentStorageKeyName = "IsS5LuaDebuggerActive"
-    private registerdDebugAdapterDescriptorFactory: vscode.Disposable | undefined =  undefined
+    private registerdDebugAdapterDescriptorFactory: vsCodeDisposable =  undefined
     constructor(private readonly extensionContext: vscode.ExtensionContext,) {
         let checkboxChecked: boolean = this.extensionContext.globalState.get(this.persistentStorageKeyName)!;
         this.isCheckboxChecked = checkboxChecked
@@ -18,18 +20,23 @@ export class MySidebarProvider implements vscode.WebviewViewProvider {
     public async resolveWebviewView( webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, token: vscode.CancellationToken) {
         webviewView.webview.options = { enableScripts: true, localResourceRoots: [this.extensionContext.extensionUri] };
         webviewView.webview.html = await this.getHtmlForWebview(webviewView.webview);
-
-        webviewView.webview.onDidReceiveMessage(async (data: checkboxToggleIsActive) => {
-            switch (data.type) {
+        if (this.isCheckboxChecked) {
+            webviewView.webview.postMessage({
+                command:"setCheckboxToTrue",
+                value:this.isCheckboxChecked
+            })
+            this.activateOrStopGameSearch(this.isCheckboxChecked)
+        }
+        webviewView.webview.onDidReceiveMessage(async (message: messageContent) => {
+            switch (message.type) {
                 case 'toggleChanged': {
-                    await this.extensionContext.globalState.update(this.persistentStorageKeyName, data.value);
-                    console.log(typeof(data.value))
-                     this.activateOrStopGameSearch(data.value)
+                    await this.extensionContext.globalState.update(this.persistentStorageKeyName, message.value);
+                    console.log(typeof(message.value))
+                     this.activateOrStopGameSearch(message.value)
                     break;
                 }
             }
         });
-
     }
 
     private activateOrStopGameSearch(status: boolean) {
