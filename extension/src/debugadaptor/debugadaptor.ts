@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
+import { checkProcess } from './findprocess';
 
 type timeoutTrigger = NodeJS.Timeout | undefined
 
 export class S5DebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
 	private searchIntervall: timeoutTrigger = undefined
 	constructor() {
-		console.log("Adaptor created!")
 	}
 	public async createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): Promise<vscode.ProviderResult<vscode.DebugAdapterDescriptor>> {
 		let conf = session.configuration;
@@ -25,8 +25,10 @@ export class S5DebugAdapterDescriptorFactory implements vscode.DebugAdapterDescr
 	}
 
 	public searchForGame() {
-		this.searchIntervall =  setInterval( () =>{
-			console.log("Suchintervall ausgeführt")
+		this.searchIntervall =  setInterval( async () =>{
+			if (await checkProcess("settlershok.exe")) {
+				
+			}
 		},2000)
 	}
 

@@ -17,7 +17,6 @@ export class MySidebarProvider implements vscode.WebviewViewProvider {
         this.S5DebugAdapterDescriptorFactoryDisposable = new S5DebugAdapterDescriptorFactory()
         this.registerdDebugAdapterDescriptorFactory = vscode.debug.registerDebugAdapterDescriptorFactory('s5lua', this.S5DebugAdapterDescriptorFactoryDisposable)
         this.extensionContext.subscriptions.push(this.registerdDebugAdapterDescriptorFactory);
-        console.log("webview created")
     }
 
     public async resolveWebviewView( webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, token: vscode.CancellationToken) {
@@ -46,9 +45,6 @@ export class MySidebarProvider implements vscode.WebviewViewProvider {
                 command:"setCheckboxToTrue",
                 value:this.isCheckboxChecked
             })
-        } else {
-            console.log("Webview wurde verlassen oder minimiert");
-            // Hier Code ausführen, wenn der Nutzer wegschaltet
         }
     });
     }
